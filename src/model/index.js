@@ -68,6 +68,8 @@ export async function processImages(imgSrcArr, truncatedMobileNet) {
 export async function buildModel(
   truncatedMobileNet,
   setLoss,
+  setValLoss,
+  setAcc,
   controllerDataset,
   hiddenUnits = 100,
   batchSize = 1,
@@ -101,12 +103,18 @@ export async function buildModel(
   });
 
   const optimizer = tf.train.adam(learningrate);
-  model.compile({ optimizer: optimizer, loss: "categoricalCrossentropy" });
+  model.compile({
+    optimizer: optimizer,
+    loss: "categoricalCrossentropy",
+    metrics : ['accuracy']
+  });
   const store = getDefaultStore();
 
   model.fit(controllerDataset.xs, controllerDataset.ys, {
     batchSize,
     epochs: epochs,
+    validationSplit: 0.15,
+    shuffle : true,
     callbacks: {
       onBatchEnd: async (batch, logs) => {
         setLoss(logs.loss.toFixed(5));
@@ -121,11 +129,22 @@ export async function buildModel(
           trainingProgressAtom,
           Math.floor(((epoch + 1) / epochs) * 100)
         );
+        
+        // ✨ 修改: 更新 Val Loss 和 Accuracy
+        if (logs.val_loss !== undefined) {
+              setValLoss(logs.val_loss.toFixed(5));
+        }
+        if (logs.acc !== undefined) {
+             setAcc((logs.acc * 100).toFixed(1) + "%");
+        }
+
         if (store.get(stopTrainingAtom)) {
           model.stopTraining = true;
           store.set(stopTrainingAtom, false);
           console.log("Training has been stopped.");
         }
+
+        await tf.nextFrame();
       },
     },
   });

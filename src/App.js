@@ -1,7 +1,9 @@
 import React from "react";
+import { useState } from "react";
 import PacMan from "./components/PacMan";
 import MLTrain from "./components/MLTrain";
 import DataCollection from "./components/DataCollection";
+import GuideModal from "./components/GuideModal";
 import {
     Box,
     CssBaseline,
@@ -11,11 +13,12 @@ import {
     Container,
     Grid,
     Paper,
+    Button,
 } from "@mui/material";
 
 export default function App() {
     const webcamRef = React.useRef(null);
-
+    const [openGuide, setOpenGuide] = useState(false);
     return (
         <Box sx={{ display: "flex" }}>
             <CssBaseline />
@@ -25,9 +28,19 @@ export default function App() {
                         pl: "24px", // left padding
                     }}
                 >
-                    <Typography component="h1" variant="h3" color="inherit" noWrap>
+                    <Typography component="h1" variant="h3" color="inherit" noWrap sx={{ flexGrow: 1 }}>
                         Control PAC MAN via the camera!
                     </Typography>
+                    
+                    <Button 
+                        color="inherit" 
+                        variant="outlined" 
+                        sx={{ borderColor: 'white', color: 'white' }}
+                        onClick={() => setOpenGuide(true)}
+                    >
+                        ❓ Instructions
+                    </Button>
+
                 </Toolbar>
             </AppBar>
 
@@ -49,6 +62,7 @@ export default function App() {
                             <Paper
                                 sx={{
                                     p: 2,
+                                    pb: 6,
                                     display: "flex",
                                     flexDirection: "column",
                                     marginBottom: 3,
@@ -75,6 +89,7 @@ export default function App() {
                             </Paper>
                         </Grid>
                     </Grid>
+                    <GuideModal open={openGuide} onClose={() => setOpenGuide(false)} />
                 </Container>
             </Box>
         </Box>
