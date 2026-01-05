@@ -54,9 +54,9 @@ export default function DataCollection({ webcamRef, onHover, onLeave }) {
 
         // If image is not null, proceed with adding it to the dataset
         if (newImageSrc) {
-
+            const uniqueId = Date.now();
             // Add example to the dataset
-            const newImageArr = [...imgSrcArr, { src: newImageSrc, label: direction }];
+            const newImageArr = [...imgSrcArr, {id: uniqueId, src: newImageSrc, label: direction }];
             setImgSrcArr(newImageArr);
             setBatchSize(Math.floor(newImageArr.length * 0.4));
 
@@ -86,10 +86,16 @@ export default function DataCollection({ webcamRef, onHover, onLeave }) {
 
     const removeExample = (idToRemove) => {
         setGalleryData(prevData => {
-            // 保存所有图片，除了被删除那个图片
-            const newData = prevData.filter(item => item.id !== idToRemove);
-            return newData;
-        })
+                return prevData.filter(item => item.id !== idToRemove);
+            });
+
+        // 2. 更新上面的总数据源 (Count 来源)
+        setImgSrcArr(prevImages => {
+            // 确保箭头左边的名字(prevImages) 和 里面用的名字(prevImages) 完全一致
+            const newImages = prevImages.filter(item => item.id !== idToRemove);
+            setBatchSize(Math.floor(newImages.length * 0.4));
+            return newImages;
+        });
     }
 
     const cameraPlaceholder = (
