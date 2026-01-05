@@ -62,23 +62,15 @@ export default function App() {
                             <Paper
                                 sx={{
                                     p: 2,
-                                    pb: 6,
                                     display: "flex",
                                     flexDirection: "column",
-                                    marginBottom: 3,
+                                    // ⚠️ 重点：把原来的 height: 340 删掉或改成 'auto'
+                                    // 因为现在这里面塞了照片墙，高度会变高，固定 340 会显示不全
+                                    height: "auto", 
+                                    minHeight: "80vh" // 可选：给个最小高度保持美观
                                 }}
                             >
-                                {/* part 1 where we collect training data */}
-                                <DataCollection webcamRef={webcamRef} />
-                            </Paper>
-                            <Paper
-                                sx={{
-                                    p: 2,
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    height: 340,
-                                }}
-                            >
+                                {/* 只留这一行！DataCollection 已经在它肚子里了 */}
                                 <MLTrain webcamRef={webcamRef} />
                             </Paper>
                         </Grid>

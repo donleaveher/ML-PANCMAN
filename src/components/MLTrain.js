@@ -27,6 +27,7 @@ import {
   accAtom,
 } from "../GlobalState";
 import { useAtom } from "jotai";
+import DataCollection from "./DataCollection";
 import { data, train } from "@tensorflow/tfjs";
 // import JSONWriter from "./JSONWriter";
 // import JSONLoader from "./JSONLoader";
@@ -86,32 +87,73 @@ export default function MLTrain({ webcamRef }) {
   const batchValueArray = [0.05, 0.1, 0.4, 1].map((r) =>
     Math.floor(imgSrcArr.length * r)
   );
+  // 增加一个鼠标悬停的功能，然后得到关于单个图片训练效果的功能
+  const [hoverInfo, setHoverInfo] = useState(null);
 
   const [, setStopTraining] = useAtom(stopTrainingAtom);
 
   // Reference to update isRunning
   const isRunningRef = useRef(isRunning);
+  const SAMPLE_DELAY_MS = 30;
+  const WINDOW_SIZE = 5;
+  const historyRef = useRef([]);
+  const directionLabels = {
+    0: "right",
+    1: "up",
+    2: "left",
+    3: "down",
+  };
 
-  // Loop to predict direction
-  // Loop to predict direction
+  useEffect(() => {
+    isRunningRef.current = isRunning;
+  }, [isRunning]);
+
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  const getMostFrequent = (arr) => {
+    if (arr.length === 0) return -1;
+    const counts = {};
+    let maxCount = 0;
+    let maxElement = arr[0];
+
+    for (const val of arr) {
+      counts[val] = (counts[val] || 0) + 1;
+      if (counts[val] > maxCount) {
+        maxCount = counts[val];
+        maxElement = val;
+      }
+    }
+    return maxElement;
+  };
+
+  // Loop to predict direction with frame voting
   async function runPredictionLoop() {
     while (isRunningRef.current) {
-      // 1. 先获取预测结果
-      const result = await predictDirection(
+      const currentPrediction = await predictDirection(
         webcamRef,
         truncatedMobileNet,
         model
       );
 
-      // 2. 传给游戏逻辑 (PacMan 移动)
-      setPredictionDirection(result);
+      if (typeof currentPrediction === "number" && currentPrediction >= 0) {
+        historyRef.current.push(currentPrediction);
 
-      // 3. ✨ 传给 UI 显示 (屏幕上的大箭头)
-      setPredictedDirectionUI(result);
+        if (historyRef.current.length > WINDOW_SIZE) {
+          historyRef.current.shift();
+        }
 
-      await new Promise((resolve) => setTimeout(resolve, 150));
+        if (historyRef.current.length === WINDOW_SIZE) {
+          const decision = getMostFrequent(historyRef.current);
+          setPredictionDirection(decision);
+          setPredictedDirectionUI(
+            decision >= 0 ? directionLabels[decision] : null
+          );
+        }
+      }
+
+      await sleep(SAMPLE_DELAY_MS);
     }
-    // 循环结束后，清空箭头显示
+
     setPredictedDirectionUI(null);
   }
 
@@ -152,7 +194,18 @@ export default function MLTrain({ webcamRef }) {
   );
 
   const ReguarlDisplay = (
-    <Grid container space={2}>
+    <Grid
+      container
+      space={2}
+      sx={{
+        // 👇 【核心修改】在这里加上顶部边框和间距
+        borderTop: "2px solid #e0e0e0", // 灰色细线 (想要粗一点可以改成 2px)
+        pt: 2,                          // paddingTop: 线和下面内容的内部距离 (让内容不顶着线)
+        mt: 2,                          // marginTop: 线和上面图片墙的外部距离 (拉开两块区域)
+        width: '100%',                  // 确保线占满整行
+        alignItems: "flex-start"            // (可选) 垂直居中对齐
+    }}
+    >
       <Grid item xs={6}>
         <Button
           variant="contained"
@@ -192,7 +245,12 @@ export default function MLTrain({ webcamRef }) {
         </Typography>
         {/* <JSONWriter /> <br /> */}
       </Grid>
-      <Grid item xs={6}>
+      <Grid item xs={6}
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems:'flex-end'
+        }}>
         <div className="hyper-params">
           {/* <label>Learning rate</label> */}
           {generateSelectComponent(
@@ -231,9 +289,111 @@ export default function MLTrain({ webcamRef }) {
     </Grid>
   );
 
+  //当鼠标悬停的时候
+  const handleImageHover = async (imageSrc, event) => {
+    if (!model || !truncatedMobileNet) return;
+
+    const { clientX, clientY } = event;
+    const img = new Image();
+    img.src = imageSrc;
+    img.crossOrigin = `anonymous`;
+    img.onload = async () => {
+        const result = tf.tidy(() => {
+          let imgTensor = tf.browser.fromPixels(img);
+          // 必须和你 addExample 时的预处理完全一致
+          imgTensor = tf.image.resizeBilinear(imgTensor, [224, 224]); 
+          imgTensor = imgTensor.expandDims(0);
+          imgTensor = imgTensor.div(255.0); 
+
+          // 1. 提取特征
+          const activation = truncatedMobileNet.predict(imgTensor);
+          // 2. 预测概率
+          const predictions = model.predict(activation);
+          return predictions.dataSync(); // 获取数组
+      });
+
+      // 更新 State，显示悬浮窗
+      setHoverInfo({
+          predictions: Array.from(result),
+          x: clientX,
+          y: clientY
+      });
+    };
+  };
+  // --- 鼠标移开时 ---
+  const handleImageLeave = () => {
+    setHoverInfo(null); // 关闭悬浮窗
+  };
+
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      {imgSrcArr.length === 0 ? EmptyDatasetDisaply : ReguarlDisplay}
+      <Grid container direction="column" spacing={3}>
+        <Grid item xs={12}>
+          <DataCollection 
+              webcamRef={webcamRef} 
+              onHover={handleImageHover} // 核心：传递预测功能
+              onLeave={handleImageLeave} // 核心：传递清除功能
+          />
+        </Grid>
+
+        <Grid item xs={12}>
+          {/* 这里保留你原有的逻辑：没数据显提示，有数据显控制台 */}
+          {imgSrcArr.length === 0 ? EmptyDatasetDisaply : ReguarlDisplay}
+        </Grid>
+          <PredictionTooltip info={hoverInfo} />
+        </Grid>
     </Suspense>
   );
+
 }
+
+// --- 定义在 MLTrain.js 文件的最下面，或者单独一个文件也可以 ---
+
+const PredictionTooltip = ({ info }) => {
+  if (!info) return null;
+
+  return (
+    <Paper
+      elevation={6} // 添加阴影深度
+      sx={{
+        position: 'fixed', // 关键：悬浮在最上层
+        left: info.x + 15, // 稍微偏移鼠标，防止遮挡
+        top: info.y + 15,
+        zIndex: 9999,      // 确保盖过所有东西
+        bgcolor: 'rgba(33, 33, 33, 0.95)', // 深色背景，略微透明
+        color: '#fff',
+        p: 1.5,            // padding
+        borderRadius: 2,
+        minWidth: 140,
+        pointerEvents: 'none', // 关键：让鼠标穿透，防止闪烁
+      }}
+    >
+      <Typography variant="subtitle2" sx={{ mb: 1, borderBottom: '1px solid #555', pb: 0.5 }}>
+        Model Confidence
+      </Typography>
+
+      {['Up', 'Down', 'Left', 'Right', 'Neutral'].map((label, idx) => {
+        const prob = info.predictions[idx] || 0;
+        const percentage = (prob * 100).toFixed(1) + '%';
+        const isHigh = prob > 0.5;
+
+        return (
+          <Box key={label} sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+            <Typography variant="caption" sx={{ color: isHigh ? '#66bb6a' : '#aaa' }}>
+              {label}:
+            </Typography>
+            <Typography 
+                variant="caption" 
+                sx={{ 
+                    fontWeight: isHigh ? 'bold' : 'normal',
+                    color: isHigh ? '#66bb6a' : '#fff' 
+                }}
+            >
+              {percentage}
+            </Typography>
+          </Box>
+        );
+      })}
+    </Paper>
+  );
+};

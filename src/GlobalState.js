@@ -4,10 +4,12 @@ import { loadTruncatedMobileNet } from "./model";
 // ---- Configurations ----
 export const epochsAtom = atom(100); // Number of epochs
 export const batchSizeAtom = atom(1); // Selected batch size
+export const batchArrayAtom = atom([]); // Optional batch array holder
 export const hiddenUnitsAtom = atom(100); // Number of hidden units
 export const learningRateAtom = atom(0.0001); // Learning rate
 export const gameRunningAtom = atom(false); // Game state
 export const predictionAtom = atom(null); // Current prediction
+export const dataSetSizeAtom = atom(0); // Dataset size tracking
 
 // ---- Model Training ----
 export const modelAtom = atom(null); // Model
@@ -24,3 +26,6 @@ export const predictedDirectionAtom = atom(null);
 
 export const valLossAtom = atom(null);
 export const accAtom = atom(null);
+
+// Gallery data for visualization (id, label, imageSrc)
+export const galleryDataAtom = atom([]);
