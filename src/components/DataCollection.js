@@ -72,15 +72,15 @@ export default function DataCollection({ webcamRef, onHover, onLeave }) {
         }
     };
 
-    // ✨ 新增：清除特定方向数据的函数
+    // ✨ Added: clear data for a specific direction
     const clearData = (direction) => () => {
-        // 过滤掉 label 等于当前方向的数据
+        // Filter out entries whose label matches the current direction
         const newImageArr = imgSrcArr.filter((item) => item.label !== direction);
         setImgSrcArr(newImageArr);
-        // 同样更新 batchSize，防止数据变少后 batchSize 过大
+        // Also update batchSize so it does not stay oversized after pruning
         setBatchSize(Math.floor(newImageArr.length * 0.4));
 
-        // 清除画廊中同方向的数据
+        // Remove gallery entries for the same direction
         setGalleryData((prev) => prev.filter((item) => item.label !== direction));
     };
 
@@ -89,9 +89,9 @@ export default function DataCollection({ webcamRef, onHover, onLeave }) {
                 return prevData.filter(item => item.id !== idToRemove);
             });
 
-        // 2. 更新上面的总数据源 (Count 来源)
+        // 2. Update the main data source above (Count source)
         setImgSrcArr(prevImages => {
-            // 确保箭头左边的名字(prevImages) 和 里面用的名字(prevImages) 完全一致
+            // Ensure the outer argument name (prevImages) matches the usage inside
             const newImages = prevImages.filter(item => item.id !== idToRemove);
             setBatchSize(Math.floor(newImages.length * 0.4));
             return newImages;
@@ -143,10 +143,10 @@ export default function DataCollection({ webcamRef, onHover, onLeave }) {
                 </Box>
                 <Box sx={{ marginTop: 1 }}>
                     {isCameraOn ? (
-                        // ✨✨✨ 修改开始：我们需要给 Webcam 加个兄弟节点，所以外面要包一层 Box 或 <> ✨✨✨
+                        // ✨✨✨ Start change: wrap Webcam so we can add a sibling node ✨✨✨
                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                             
-                            {/* 1. 这是你原来的 Webcam */}
+                            {/* 1. This is your original Webcam */}
                             <Webcam
                             mirrored
                             width={224}
@@ -160,7 +160,7 @@ export default function DataCollection({ webcamRef, onHover, onLeave }) {
                             }}
                             />
 
-                            {/* 2. ✨✨✨ 在这里插入箭头显示代码 (Webcam 下方) ✨✨✨ */}
+                            {/* 2. ✨✨✨ Insert the arrow display here (below the Webcam) ✨✨✨ */}
                             <Box sx={{ 
                                 mt: 2, 
                                 p: 1,
@@ -169,14 +169,14 @@ export default function DataCollection({ webcamRef, onHover, onLeave }) {
                                 minWidth: 100,
                                 textAlign: 'center'
                             }}>
-                                {!predictedDirection && <Typography variant="caption">等待预测...</Typography>}
+                                {!predictedDirection && <Typography variant="caption">Waiting for prediction...</Typography>}
                                 {predictedDirection === "up" && <ArrowUpward sx={{ fontSize: 60, color: '#ff1744' }} />}
                                 {predictedDirection === "down" && <ArrowDownward sx={{ fontSize: 60, color: '#ff1744' }} />}
                                 {predictedDirection === "left" && <ArrowBack sx={{ fontSize: 60, color: '#ff1744' }} />}
                                 {predictedDirection === "right" && <ArrowForward sx={{ fontSize: 60, color: '#ff1744' }} />}
                             </Box>
                         </Box>
-                        // ✨✨✨ 修改结束 ✨✨✨
+                        // ✨✨✨ End change ✨✨✨
                     ) : (
                         cameraPlaceholder
                     )}
@@ -192,15 +192,15 @@ export default function DataCollection({ webcamRef, onHover, onLeave }) {
                         directionIcon={DIRECTIONS[directionKey]}
                         onCapture={capture(directionKey)}
                         dirImgSrcArr={imgSrcArr.filter((d) => d.label == directionKey)}
-                        label={directionKey} // 传入标签名用于 tooltip
-                        onClear={clearData(directionKey)} // 传入清除函数
+                        label={directionKey} // Pass the label name for the tooltip
+                        onClear={clearData(directionKey)} // Pass the clear handler
                         
                     />
                 );
             })}
         </Grid>
 
-        {/* 可视化面板：按方向分组展示采集到的图片 */}
+        {/* Visualization panel: show collected images grouped by direction */}
         <Box
             sx={{
             
@@ -221,7 +221,7 @@ export default function DataCollection({ webcamRef, onHover, onLeave }) {
                     <Typography
                         variant="caption"
                         sx={{
-                            color: '#d32f2f', // 红色警告色，显眼
+                            color: '#d32f2f', // Bright red warning color
                             fontStyle: 'italic',
                             display: 'block',
                             marginTop: '5px'
@@ -269,7 +269,7 @@ export default function DataCollection({ webcamRef, onHover, onLeave }) {
                                                     position: 'absolute',
                                                     top: 0,
                                                     right: 0,
-                                                    background: 'rgba(255, 0, 0, 0.8)', // 半透明红色
+                                                    background: 'rgba(255, 0, 0, 0.8)', // Semi-transparent red
                                                     color: 'white',
                                                     border: 'none',
                                                     width: '20px',
@@ -279,7 +279,7 @@ export default function DataCollection({ webcamRef, onHover, onLeave }) {
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
-                                                    borderRadius: '0 0 0 4px' // 左下角一点圆角，美观
+                                                    borderRadius: '0 0 0 4px' // Slight rounding on the bottom-left corner
                                                 }}
                                                 title="Remove this image"
                                             >
@@ -309,11 +309,11 @@ const OneDirection = ({ directionIcon, onCapture, onClear, dirImgSrcArr, disable
 
     return (
         <Grid item xs={3} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            {/* 按钮控制区 */}
+            {/* Button controls */}
             <Box 
                 textAlign="center" 
                 display="flex" 
-                flexDirection="column" // 垂直排列按钮，因为水平空间 xs={3} 可能不够
+                flexDirection="column" // Stack vertically because xs={3} may be narrow
                 gap={1} 
                 mb={1}
             >
@@ -327,9 +327,9 @@ const OneDirection = ({ directionIcon, onCapture, onClear, dirImgSrcArr, disable
                     Add
                 </Button>
                 
-                {/* 清除按钮：只有当有数据时才显示或者是disabled状态 */}
+                {/* Clear button: only visible or enabled when data exists */}
                 <Tooltip title={`Clear ${label} data`}>
-                    <span> {/* span用于包裹disabled的按钮以显示tooltip */}
+                    <span> {/* Wrap disabled button in a span so the tooltip still shows */}
                         <IconButton 
                             onClick={onClear} 
                             disabled={!hasData} 
@@ -343,7 +343,7 @@ const OneDirection = ({ directionIcon, onCapture, onClear, dirImgSrcArr, disable
                 </Tooltip>
             </Box>
 
-            {/* 图片预览和计数区 */}
+            {/* Image preview and count */}
             <Box textAlign="center" sx={{ width: "100%", height: "80px", position: 'relative', my:3}}>
                 {hasData ? (
                     <>
@@ -353,7 +353,7 @@ const OneDirection = ({ directionIcon, onCapture, onClear, dirImgSrcArr, disable
                             style={{ padding: "2px", border: '1px solid #ccc', borderRadius: '4px' }}
                             alt="preview"
                         />
-                        {/* 显示采集数量 */}
+                        {/* Display collected count */}
                         <Typography variant="caption" display="block">
                             Count: {dirImgSrcArr.length}
                         </Typography>

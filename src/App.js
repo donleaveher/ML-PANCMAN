@@ -64,13 +64,13 @@ export default function App() {
                                     p: 2,
                                     display: "flex",
                                     flexDirection: "column",
-                                    // ⚠️ 重点：把原来的 height: 340 删掉或改成 'auto'
-                                    // 因为现在这里面塞了照片墙，高度会变高，固定 340 会显示不全
+                                    // ⚠️ Important: remove the old height: 340 or change it to 'auto'
+                                    // The photo wall increases the height, so a fixed 340px cuts it off
                                     height: "auto", 
-                                    minHeight: "80vh" // 可选：给个最小高度保持美观
+                                    minHeight: "80vh" // Optional: give a minimum height to keep it neat
                                 }}
                             >
-                                {/* 只留这一行！DataCollection 已经在它肚子里了 */}
+                                {/* Keep only this line! DataCollection is nested inside */}
                                 <MLTrain webcamRef={webcamRef} />
                             </Paper>
                         </Grid>

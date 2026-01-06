@@ -130,7 +130,7 @@ export async function buildModel(
           Math.floor(((epoch + 1) / epochs) * 100)
         );
         
-        // ✨ 修改: 更新 Val Loss 和 Accuracy
+        // ✨ Update: refresh Val Loss and Accuracy
         if (logs.val_loss !== undefined) {
               setValLoss(logs.val_loss.toFixed(5));
         }

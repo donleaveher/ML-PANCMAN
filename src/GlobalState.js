@@ -21,7 +21,7 @@ export const lossAtom = atom(null); // Loss value
 export const trainingProgressAtom = atom(-1); // Training progress
 export const stopTrainingAtom = atom(false); // Flag to stop training
 
-// ✨ 新增：存储当前预测的方向 (例如 'up', 'down', 'left', 'right' 或 null)
+// ✨ New: track the current predicted direction (e.g., 'up', 'down', 'left', 'right', or null)
 export const predictedDirectionAtom = atom(null);
 
 export const valLossAtom = atom(null);

@@ -31,7 +31,7 @@ import DataCollection from "./DataCollection";
 import { data, train } from "@tensorflow/tfjs";
 // import JSONWriter from "./JSONWriter";
 // import JSONLoader from "./JSONLoader";
-import { predictedDirectionAtom } from "../GlobalState"; // 引入刚才写的
+import { predictedDirectionAtom } from "../GlobalState"; // Bring in the predicted direction atom we added
 function generateSelectComponent(
   label,
   options,
@@ -67,9 +67,9 @@ export default function MLTrain({ webcamRef }) {
   const [hiddenUnits, setHiddenUnits] = useAtom(hiddenUnitsAtom);
   const [isRunning] = useAtom(gameRunningAtom);
 
-  // 游戏逻辑用的 atom
+  // Atom for game logic
   const [, setPredictionDirection] = useAtom(predictionAtom);
-  // ✨ UI 显示用的 atom (大箭头)
+  // ✨ UI display atom (big arrow)
   const [, setPredictedDirectionUI] = useAtom(predictedDirectionAtom);
 
   // ---- Model Training ----
@@ -87,7 +87,7 @@ export default function MLTrain({ webcamRef }) {
   const batchValueArray = [0.05, 0.1, 0.4, 1].map((r) =>
     Math.floor(imgSrcArr.length * r)
   );
-  // 增加一个鼠标悬停的功能，然后得到关于单个图片训练效果的功能
+  // Enable hover to inspect how each sample performs during training
   const [hoverInfo, setHoverInfo] = useState(null);
 
   const [, setStopTraining] = useAtom(stopTrainingAtom);
@@ -198,12 +198,12 @@ export default function MLTrain({ webcamRef }) {
       container
       space={2}
       sx={{
-        // 👇 【核心修改】在这里加上顶部边框和间距
-        borderTop: "2px solid #e0e0e0", // 灰色细线 (想要粗一点可以改成 2px)
-        pt: 2,                          // paddingTop: 线和下面内容的内部距离 (让内容不顶着线)
-        mt: 2,                          // marginTop: 线和上面图片墙的外部距离 (拉开两块区域)
-        width: '100%',                  // 确保线占满整行
-        alignItems: "flex-start"            // (可选) 垂直居中对齐
+        // 👇 Core change: add a top border and spacing here
+        borderTop: "2px solid #e0e0e0", // Light gray line (use 2px for a heavier look)
+        pt: 2,                          // Padding between the line and the content below
+        mt: 2,                          // Margin to separate from the image wall above
+        width: '100%',                  // Ensure the line spans the full row
+        alignItems: "flex-start"            // Optional: align items toward the top
     }}
     >
       <Grid item xs={6}>
@@ -234,11 +234,11 @@ export default function MLTrain({ webcamRef }) {
               <strong>Train Loss:</strong> {lossVal || "-"}
             </Grid>
             <Grid item xs={12} sx={{ color: "#ed6c02" }}>
-              {/* 用橙色突出 Val Loss */}
+              {/* Highlight Val Loss in orange */}
               <strong>Val Loss:</strong> {valLoss || "-"}
             </Grid>
             <Grid item xs={12} sx={{ color: "#2e7d32" }}>
-              {/* 用绿色突出 Accuracy */}
+              {/* Highlight Accuracy in green */}
               <strong>Accuracy:</strong> {acc || "-"}
             </Grid>
           </Grid>
@@ -289,7 +289,7 @@ export default function MLTrain({ webcamRef }) {
     </Grid>
   );
 
-  //当鼠标悬停的时候
+  // When hovering over a thumbnail
   const handleImageHover = async (imageSrc, event) => {
     if (!model || !truncatedMobileNet) return;
 
@@ -300,19 +300,19 @@ export default function MLTrain({ webcamRef }) {
     img.onload = async () => {
         const result = tf.tidy(() => {
           let imgTensor = tf.browser.fromPixels(img);
-          // 必须和你 addExample 时的预处理完全一致
+          // Must mirror the preprocessing used in addExample
           imgTensor = tf.image.resizeBilinear(imgTensor, [224, 224]); 
           imgTensor = imgTensor.expandDims(0);
           imgTensor = imgTensor.div(255.0); 
 
-          // 1. 提取特征
+          // 1. Extract features
           const activation = truncatedMobileNet.predict(imgTensor);
-          // 2. 预测概率
+          // 2. Predict probabilities
           const predictions = model.predict(activation);
-          return predictions.dataSync(); // 获取数组
+          return predictions.dataSync(); // Get the array
       });
 
-      // 更新 State，显示悬浮窗
+      // Update state to show the tooltip
       setHoverInfo({
           predictions: Array.from(result),
           x: clientX,
@@ -320,9 +320,9 @@ export default function MLTrain({ webcamRef }) {
       });
     };
   };
-  // --- 鼠标移开时 ---
+  // --- When the mouse leaves ---
   const handleImageLeave = () => {
-    setHoverInfo(null); // 关闭悬浮窗
+    setHoverInfo(null); // Close the tooltip
   };
 
   return (
@@ -331,13 +331,13 @@ export default function MLTrain({ webcamRef }) {
         <Grid item xs={12}>
           <DataCollection 
               webcamRef={webcamRef} 
-              onHover={handleImageHover} // 核心：传递预测功能
-              onLeave={handleImageLeave} // 核心：传递清除功能
+              onHover={handleImageHover} // Pass prediction handling
+              onLeave={handleImageLeave} // Pass clearing handler
           />
         </Grid>
 
         <Grid item xs={12}>
-          {/* 这里保留你原有的逻辑：没数据显提示，有数据显控制台 */}
+          {/* Keep the original behavior: show prompt when empty, controls when data exists */}
           {imgSrcArr.length === 0 ? EmptyDatasetDisaply : ReguarlDisplay}
         </Grid>
           <PredictionTooltip info={hoverInfo} />
@@ -347,25 +347,25 @@ export default function MLTrain({ webcamRef }) {
 
 }
 
-// --- 定义在 MLTrain.js 文件的最下面，或者单独一个文件也可以 ---
+// --- Defined at the bottom of MLTrain.js; could also live in its own file ---
 
 const PredictionTooltip = ({ info }) => {
   if (!info) return null;
 
   return (
     <Paper
-      elevation={6} // 添加阴影深度
+      elevation={6} // Add shadow depth
       sx={{
-        position: 'fixed', // 关键：悬浮在最上层
-        left: info.x + 15, // 稍微偏移鼠标，防止遮挡
+        position: 'fixed', // Key: float above everything
+        left: info.x + 15, // Slightly offset from the cursor to avoid covering it
         top: info.y + 15,
-        zIndex: 9999,      // 确保盖过所有东西
-        bgcolor: 'rgba(33, 33, 33, 0.95)', // 深色背景，略微透明
+        zIndex: 9999,      // Ensure it sits above all content
+        bgcolor: 'rgba(33, 33, 33, 0.95)', // Dark background with slight transparency
         color: '#fff',
         p: 1.5,            // padding
         borderRadius: 2,
         minWidth: 140,
-        pointerEvents: 'none', // 关键：让鼠标穿透，防止闪烁
+        pointerEvents: 'none', // Let the mouse pass through to prevent flicker
       }}
     >
       <Typography variant="subtitle2" sx={{ mb: 1, borderBottom: '1px solid #555', pb: 0.5 }}>
